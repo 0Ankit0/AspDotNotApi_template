@@ -21,14 +21,14 @@ form.submit(function (event) {
             sessionStorage.setItem("token", response.data.tokenNo);
             sessionStorage.setItem("userId", response.data.guid);
             location.href = "./index.html";
-            const signalr = new signalr.HubConnectionBuilder()
-                .withUrl("https://localhost:44348/messagehub?token=" + encodeURIComponent(response.data.tokenNo))
-                .build();
-            signalr.start().then(function () {
-                console.log("Connection started");
-            }).catch(function (err) {
-                return console.error(err.toString());
-            });
+            // const signalr = new signalr.HubConnectionBuilder()
+            //     .withUrl("https://localhost:44348/messagehub?token=" + encodeURIComponent(response.data.tokenNo))
+            //     .build();
+            // signalr.start().then(function () {
+            //     console.log("Connection started");
+            // }).catch(function (err) {
+            //     return console.error(err.toString());
+            // });
         },
         error: function (jqXHR, textStatus, errorThrown) {
             console.error(jqXHR.responseText);
@@ -42,12 +42,15 @@ $(document).ready(function () {
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("https://localhost:44348/messagehub?token=" + encodeURIComponent(token))
             .build();
-        connection.start().then(function () {
-            connection.invoke("MapConnectionIdToGuid", { Sender: SenderId })
-            console.log("Connection started");
-        }).catch(function (err) {
-            return console.error(err.toString());
-        });
+
+        if (connection.connectionState !== "Connected") {
+            connection.start().then(function () {
+                connection.invoke("MapConnectionIdToGuid", { Sender: SenderId })
+                console.log("Connection started");
+            }).catch(function (err) {
+                return console.error(err.toString());
+            });
+        }
         const navbar = $("#narbarBtn");
         const logoutButton = $(
             `<button class='btn btn-danger'  id='logoutButton'>Logout</button>`
@@ -68,10 +71,13 @@ $(document).ready(function () {
             </div>
           </li>`);
         });
+        connection.on("Mapped", (data) => {
+            console.log(data);
+        });
 
         $(document).on("click", "#sendMessageBtn", function () {
             const message = $("#messageInput").val();
-            connection.invoke("Message", { Receiver: parseInt($(this).data("userid")), MessageText: message, TokenNo: token, Sender: SenderId }).catch(function (err) {
+            connection.invoke("Message", { Receiver: $(this).data("userid"), MessageText: message, TokenNo: token, Sender: SenderId }).catch(function (err) {
                 return console.error(err.toString());
             });
 

@@ -19,13 +19,13 @@ namespace ServiceApp_backend.Classes
             _connectionIdToGuidMap = connectionIdToGuidMap;
         }
 
-        public Task MapConnectionIdToGuid(Message data)
+        public async Task MapConnectionIdToGuid(Message data)
         {
             try
             {
                 var senderId = data.Sender;
                 _connectionIdToGuidMap.TryAdd(Context.ConnectionId, senderId);
-                return Task.CompletedTask;
+                await Clients.Caller.SendAsync("Mapped", new { data = _connectionIdToGuidMap });
             }
             catch (System.Exception)
             {
@@ -69,10 +69,14 @@ namespace ServiceApp_backend.Classes
 
                 throw;
             }
-
-
         }
+
+        public override Task OnDisconnectedAsync(Exception exception)
+        {
+            _connectionIdToGuidMap.TryRemove(Context.ConnectionId, out _);
+            return base.OnDisconnectedAsync(exception);
+        }
+
     }
 }
-
 
