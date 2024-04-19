@@ -20,6 +20,7 @@ DatabaseSettings.ConnectionString = builder.Configuration.GetConnectionString("D
 // Configure JWT authentication.
 builder.Services.AddSingleton<ConcurrentDictionary<string, string>>();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+builder.Services.AddScoped<JwtAuth>(); // Add this line
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

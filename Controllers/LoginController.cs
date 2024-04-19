@@ -16,7 +16,13 @@ namespace ServiceApp_backend.Controllers
     [ApiController]
     public class LoginController : ControllerBase
     {
-       DatabaseHelper db = new DatabaseHelper();
+        DatabaseHelper db = new DatabaseHelper();
+        private readonly JwtAuth _jwtAuth;
+
+        public LoginController(JwtAuth jwtAuth)
+        {
+            _jwtAuth = jwtAuth;
+        }
 
         // GET: api/<LoginController>
         [HttpGet]
@@ -48,14 +54,13 @@ namespace ServiceApp_backend.Controllers
                 new SqlParameter("@Role", br.Role),
                 new SqlParameter("@GUID", br.GUID)
             };
-           DataTable dt= db.ReadDataTable("Usp_IU_Users", parm);
+            DataTable dt = db.ReadDataTable("Usp_IU_Users", parm);
             var UserId = dt.Rows[0]["UserId"].ToString();
             if (dt.Rows.Count > 0)
             {
-                JwtAuth jwtAuth =new JwtAuth("your_secret_key", "Ankit", "AllUsers");
-               string TokenNo = jwtAuth.GenerateToken(br.UserName, Convert.ToInt32(UserId));
-                 jsonstring = "{\"status\":200,\"message\":\"Data is sucessfully inserted\",\"data\":{\"tokenNo\":\"" + TokenNo + "\"}}";
-               JObject myObj = (JObject)JsonConvert.DeserializeObject(jsonstring);
+                string TokenNo = _jwtAuth.GenerateToken(br.UserName, Convert.ToInt32(UserId));
+                jsonstring = "{\"status\":200,\"message\":\"Data is sucessfully inserted\",\"data\":{\"tokenNo\":\"" + TokenNo + "\"}}";
+                JObject myObj = (JObject)JsonConvert.DeserializeObject(jsonstring);
                 return Ok(myObj);
             }
             else
@@ -66,10 +71,10 @@ namespace ServiceApp_backend.Controllers
                     status = 404,
                     data = new { tokenNo = "" }
                 };
-               
+
                 return Ok(rm);
             }
-           }
+        }
         [HttpPost("LoginValidation")]
         public IActionResult LoginValidation([FromBody] UsersModal br)
         {
@@ -87,8 +92,7 @@ namespace ServiceApp_backend.Controllers
                 {
                     var UserId = dt.Rows[0]["UserId"].ToString();
                     var UserName = dt.Rows[0]["UserName"].ToString();
-                    JwtAuth jwtAuth = new JwtAuth("aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789!@#$%^&*()", "Ankit", "AllUsers");
-                    string TokenNo = jwtAuth.GenerateToken(UserName, Convert.ToInt32(UserId));
+                    string TokenNo = _jwtAuth.GenerateToken(UserName, Convert.ToInt32(UserId));
                     var response = new
                     {
                         status = 200,
@@ -106,8 +110,8 @@ namespace ServiceApp_backend.Controllers
                         status = 404,
                         data = new { tokenNo = "" }
                     };
-                   
-                    return Ok(rm);
+
+                    return BadRequest(rm);
                 }
             }
             catch (Exception ex)
@@ -120,11 +124,11 @@ namespace ServiceApp_backend.Controllers
                 };
                 return Ok(rm);
             }
-           }
+        }
 
         // PUT api/<LoginController>/5
         [HttpPut("{id}")]
-            public void Put(int id, [FromBody] string value)
+        public void Put(int id, [FromBody] string value)
         {
         }
 

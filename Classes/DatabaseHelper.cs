@@ -22,28 +22,28 @@ namespace ServiceApp_backend.Classes
         {
             return DatabaseSettings.ConnectionString;
         }
-    
-    public JObject ReadDataWithResponse(string sql, SqlParameter[] parm)
-    {
-        StringBuilder Sb = new StringBuilder();
-        string ConString = GetConnectionString();
-        SqlConnection conn = new SqlConnection(ConString);
-        try
+
+        public JObject ReadDataWithResponse(string sql, SqlParameter[] parm)
         {
-            var jsonstring = "";
-            SqlCommand cmd = new SqlCommand();
-            cmd.Connection = conn;
-            cmd.CommandText = sql;
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandTimeout = 0;
-            if (parm != null)
+            StringBuilder Sb = new StringBuilder();
+            string ConString = GetConnectionString();
+            SqlConnection conn = new SqlConnection(ConString);
+            try
             {
-                cmd.Parameters.AddRange(parm);
-            }
-            conn.Open();
-            SqlDataAdapter ad = new SqlDataAdapter(cmd);
-            DataTable dt = new DataTable();
-            ad.Fill(dt);
+                var jsonstring = "";
+                SqlCommand cmd = new SqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = sql;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandTimeout = 0;
+                if (parm != null)
+                {
+                    cmd.Parameters.AddRange(parm);
+                }
+                conn.Open();
+                SqlDataAdapter ad = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                ad.Fill(dt);
                 if (dt.Rows.Count > 0)
                 {
                     Sb.Append(DataTableToJSON(dt, "Data"));
@@ -64,51 +64,51 @@ namespace ServiceApp_backend.Classes
                     JObject myObj = (JObject)JsonConvert.DeserializeObject(jsonstring);
                     return myObj;
                 }
-        }
-        catch (Exception ex)
-        {
-            throw ex;
-        }
-        finally
-        {
-            conn.Close();
-        }
-    }
-
-       public DataTable ReadDataTable(string sql, SqlParameter[] parm)
-    {
-        StringBuilder Sb = new StringBuilder();
-        string ConString = GetConnectionString();
-        SqlConnection conn = new SqlConnection(ConString);
-        try
-        {
-            var jsonstring = "";
-            SqlCommand cmd = new SqlCommand();
-            cmd.Connection = conn;
-            cmd.CommandText = sql;
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.CommandTimeout = 0;
-            if (parm != null)
-            {
-                cmd.Parameters.AddRange(parm);
             }
-            conn.Open();
-            SqlDataAdapter ad = new SqlDataAdapter(cmd);
-            DataTable dt = new DataTable();
-            ad.Fill(dt);
-             return dt;
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                conn.Close();
+            }
         }
-        catch (Exception ex)
+
+        public DataTable ReadDataTable(string sql, SqlParameter[] parm)
         {
-            throw ex;
+            StringBuilder Sb = new StringBuilder();
+            string ConString = GetConnectionString();
+            SqlConnection conn = new SqlConnection(ConString);
+            try
+            {
+                var jsonstring = "";
+                SqlCommand cmd = new SqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = sql;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandTimeout = 0;
+                if (parm != null)
+                {
+                    cmd.Parameters.AddRange(parm);
+                }
+                conn.Open();
+                SqlDataAdapter ad = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                ad.Fill(dt);
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                conn.Close();
+            }
         }
-        finally
-        {
-            conn.Close();
-        }
-    }
-       
-        
+
+
         public ResponseModel UpdateCn(string sql, SqlParameter[] param)
         {
             string ConString = GetConnectionString();

@@ -29,11 +29,8 @@ form.submit(function (event) {
                 return console.error(err.toString());
             });
         },
-        error: function (error) {
-
-            alert("Error occurred", error);
-
-
+        error: function (jqXHR, textStatus, errorThrown) {
+            console.error(jqXHR.responseText);
         }
     });
 });
@@ -43,7 +40,7 @@ $(document).ready(function () {
     if (token) {
 
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl('https://localhost:44348/api/messagehub')
+            .withUrl("https://localhost:44348/api/messagehub?token=" + encodeURIComponent(token))
             .build();
 
         const navbar = $("#narbarBtn");
