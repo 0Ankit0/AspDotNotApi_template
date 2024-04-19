@@ -94,12 +94,12 @@ namespace ServiceApp_backend.Controllers
                 }
 
             }
-            catch (System.Exception)
+            catch (Exception ex)
             {
 
                 ResponseModel response = new ResponseModel();
                 response.status = 501;
-                response.message = "Something went wrong";
+                response.message = "Something went wrong" + ex;
                 return BadRequest(response);
             }
         }

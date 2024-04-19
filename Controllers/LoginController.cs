@@ -92,12 +92,13 @@ namespace ServiceApp_backend.Controllers
                 {
                     var UserId = dt.Rows[0]["UserId"].ToString();
                     var UserName = dt.Rows[0]["UserName"].ToString();
+                    var GUID = dt.Rows[0]["GUID"].ToString();
                     string TokenNo = _jwtAuth.GenerateToken(UserName, Convert.ToInt32(UserId));
                     var response = new
                     {
                         status = 200,
                         message = "Data is successfully inserted",
-                        data = new { TokenNo = TokenNo }
+                        data = new { TokenNo, GUID }
                     };
                     jsonstring = JsonConvert.SerializeObject(response);
                     return Ok(response);

@@ -19,6 +19,7 @@ form.submit(function (event) {
                 return;
             }
             sessionStorage.setItem("token", response.data.tokenNo);
+            sessionStorage.setItem("userId", response.data.guid);
             location.href = "./index.html";
             const signalr = new signalr.HubConnectionBuilder()
                 .withUrl("https://localhost:44348/messagehub?token=" + encodeURIComponent(response.data.tokenNo))
@@ -36,13 +37,13 @@ form.submit(function (event) {
 });
 $(document).ready(function () {
     const token = sessionStorage.getItem("token");
-
+    const SenderId = sessionStorage.getItem("userId");
     if (token) {
-
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("https://localhost:44348/messagehub?token=" + encodeURIComponent(token))
             .build();
         connection.start().then(function () {
+            connection.invoke("MapConnectionIdToGuid", { Sender: SenderId })
             console.log("Connection started");
         }).catch(function (err) {
             return console.error(err.toString());
@@ -70,7 +71,7 @@ $(document).ready(function () {
 
         $(document).on("click", "#sendMessageBtn", function () {
             const message = $("#messageInput").val();
-            connection.invoke("Message", { Receiver: parseInt($(this).data("userid")), MessageText: message, TokenNo: token }).catch(function (err) {
+            connection.invoke("Message", { Receiver: parseInt($(this).data("userid")), MessageText: message, TokenNo: token, Sender: SenderId }).catch(function (err) {
                 return console.error(err.toString());
             });
 

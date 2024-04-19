@@ -1,38 +1,36 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
-using ServiceApp_backend.Classes;
-using System.Net.Http;
+using ServiceApp_backend.Models;
 using System.Text;
 using System.Text.Json;
 using System.Net.Http.Headers;
 
-namespace ServiceApp_backend.Models
+namespace ServiceApp_backend.Classes
 {
 
     public class MessageHub : Hub
     {
         private readonly JwtAuth _jwtAuth;
-        private readonly ConcurrentDictionary<string, string> _connectionIdToTokenMap;
+        private readonly ConcurrentDictionary<string, string> _connectionIdToGuidMap;
 
-        public MessageHub(JwtAuth jwtAuth, ConcurrentDictionary<string, string> connectionIdToTokenMap)
+        public MessageHub(JwtAuth jwtAuth, ConcurrentDictionary<string, string> connectionIdToGuidMap)
         {
             _jwtAuth = jwtAuth;
-            _connectionIdToTokenMap = connectionIdToTokenMap;
+            _connectionIdToGuidMap = connectionIdToGuidMap;
         }
 
-        public override async Task OnConnectedAsync()
+        public Task MapConnectionIdToGuid(Message data)
         {
             try
             {
-                var token = Context.GetHttpContext().Request.Query["token"].ToString();
-                int userId = _jwtAuth.ExtractUserInfo(token);
-                _connectionIdToTokenMap.TryAdd(Context.ConnectionId, userId.ToString());
-                await base.OnConnectedAsync();
+                var senderId = data.Sender;
+                _connectionIdToGuidMap.TryAdd(Context.ConnectionId, senderId);
+                return Task.CompletedTask;
             }
             catch (System.Exception)
             {
 
-                throw;
+                throw new Exception("Error in mapping connection id to guid");
             }
 
         }
@@ -41,13 +39,14 @@ namespace ServiceApp_backend.Models
             try
             {
                 var receiverId = data.Receiver;
+                var senderId = data.Sender;
                 var message = data.MessageText;
                 var token = data.TokenNo;
 
                 Message msg = new Message
                 {
                     MessageText = message,
-                    Sender = _jwtAuth.ExtractUserInfo(_connectionIdToTokenMap[Context.ConnectionId]),
+                    Sender = senderId,
                     Receiver = receiverId
                 };
                 var json = JsonSerializer.Serialize(msg);
@@ -58,12 +57,12 @@ namespace ServiceApp_backend.Models
                 var response = await httpClient.PostAsync("https://localhost:44348/api/Home/message", content);
                 response.EnsureSuccessStatusCode();
                 await Clients.Caller.SendAsync("messageSent", new { userId = msg.Sender, message = msg.MessageText });
-                string receiver = receiverId.ToString();
-                if (_connectionIdToTokenMap.Any(x => x.Value == receiver))
+                if (_connectionIdToGuidMap.Any(x => x.Value == receiverId))
                 {
-                    var connectionId = _connectionIdToTokenMap.FirstOrDefault(x => x.Value == receiver).Key;
+                    var connectionId = _connectionIdToGuidMap.FirstOrDefault(x => x.Value == receiverId).Key;
                     await Clients.Client(connectionId).SendAsync("liveMessage", new { userId = msg.Sender, message = msg.MessageText });
                 }
+
             }
             catch (System.Exception)
             {
