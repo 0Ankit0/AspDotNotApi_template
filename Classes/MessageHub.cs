@@ -19,13 +19,13 @@ namespace ServiceApp_backend.Classes
             _connectionIdToGuidMap = connectionIdToGuidMap;
         }
 
-        public async Task MapConnectionIdToGuid(Message data)
+        public Task MapConnectionIdToGuid(Message data)
         {
             try
             {
                 var senderId = data.Sender;
                 _connectionIdToGuidMap.TryAdd(Context.ConnectionId, senderId);
-                await Clients.Caller.SendAsync("Mapped", new { data = _connectionIdToGuidMap });
+                return Task.CompletedTask;
             }
             catch (System.Exception)
             {
