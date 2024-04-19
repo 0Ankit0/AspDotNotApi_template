@@ -22,11 +22,19 @@ namespace ServiceApp_backend.Models
 
         public override async Task OnConnectedAsync()
         {
-            var token = Context.GetHttpContext().Request.Query["token"].ToString();
-            int userId = _jwtAuth.ExtractUserInfo(token);
-            _connectionIdToTokenMap.TryAdd(Context.ConnectionId, userId.ToString());
+            try
+            {
+                var token = Context.GetHttpContext().Request.Query["token"].ToString();
+                int userId = _jwtAuth.ExtractUserInfo(token);
+                _connectionIdToTokenMap.TryAdd(Context.ConnectionId, userId.ToString());
+                await base.OnConnectedAsync();
+            }
+            catch (System.Exception)
+            {
 
-            await base.OnConnectedAsync();
+                throw;
+            }
+
         }
         public async Task Message(Message data)
         {
@@ -54,7 +62,7 @@ namespace ServiceApp_backend.Models
                 if (_connectionIdToTokenMap.Any(x => x.Value == receiver))
                 {
                     var connectionId = _connectionIdToTokenMap.FirstOrDefault(x => x.Value == receiver).Key;
-                    await Clients.Client(connectionId).SendAsync("messageReceived", new { userId = msg.Sender, message = msg.MessageText });
+                    await Clients.Client(connectionId).SendAsync("liveMessage", new { userId = msg.Sender, message = msg.MessageText });
                 }
             }
             catch (System.Exception)
