@@ -35,6 +35,30 @@ form.submit(function (event) {
         }
     });
 });
+// $("#fileUpload").submit(function (event) {
+//     event.preventDefault();
+
+//     var data = new FormData();
+//     data.append("file", $("#file")[0].files[0]);
+
+//     $.ajax({
+//         url: "http://localhost:8000/upload/file",
+//         type: "POST",
+//         data: data,
+//         contentType: false,
+//         processData: false,
+//         headers: {
+//             Authorization: "Bearer " + sessionStorage.getItem("token"),
+//         },
+//         success: function (response) {
+//             alert(response);
+//         },
+//         error: function (xhr, error) {
+//             alert("Error occurred", error);
+//         }
+//     });
+// });
+
 $(document).ready(function () {
     const token = sessionStorage.getItem("token");
     const SenderId = sessionStorage.getItem("userId");
@@ -77,9 +101,21 @@ $(document).ready(function () {
 
         $(document).on("click", "#sendMessageBtn", function () {
             const message = $("#messageInput").val();
-            connection.invoke("Message", { Receiver: $(this).data("userid"), MessageText: message, TokenNo: token, Sender: SenderId }).catch(function (err) {
-                return console.error(err.toString());
-            });
+
+
+        });
+        $(document).on("click", "#sendMessageBtn", function () {
+            const message = $("#messageInput").val();
+
+            if ($(this).data("groupid") === undefined || $(this).data("groupid") === "") {
+                connection.invoke("Message", { Receiver: $(this).data("userid"), MessageText: message, TokenNo: token, Sender: SenderId }).catch(function (err) {
+                    return console.error(err.toString());
+                });
+            } else {
+                connection.invoke("groupmessage", { Receiver: $(this).data("groupid"), MessageText: message, TokenNo: token, Sender: SenderId }).catch(function (err) {
+                    return console.error(err.toString());
+                });
+            }
 
         });
         connection.on("messageSent", (data) => {
