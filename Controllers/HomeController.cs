@@ -26,10 +26,9 @@ namespace ServiceApp_backend.Controllers
                 {
                 new SqlParameter("@Message", data.MessageText),
                 new SqlParameter("@Sender", data.Sender),
-                new SqlParameter("@Receiver", data.Receiver),
-                new SqlParameter("@TokenNo", data.TokenNo)
+                new SqlParameter("@Receiver", data.Receiver)
             };
-            string dt = db.ReadDataWithResponse("Usp_IU_Users", parm);
+            string dt = db.ReadDataWithResponse("Usp_IU_Message", parm);
             return dt;
         }
 
@@ -48,6 +47,42 @@ namespace ServiceApp_backend.Controllers
                     };
                     string dt = db.ReadDataWithResponse("Usp_S_UsersList", parm);
 
+                    return Ok(dt);
+                }
+                else
+                {
+                    ResponseModel response = new ResponseModel();
+                    response.status = 401;
+                    response.message = "Invalid Token";
+                    return BadRequest(response);
+                }
+
+            }
+            catch (System.Exception)
+            {
+
+                ResponseModel response = new ResponseModel();
+                response.status = 501;
+                response.message = "Something went wrong";
+                return BadRequest(response);
+            }
+        }
+
+        [HttpPost("MessageList")]
+        public IActionResult GetMessageList([FromBody] Message msg)
+        {
+            try
+            {
+                var user = HttpContext.Items["User"] as dynamic;
+                if (user != null)
+                {
+                    var senderId = user.UserId;
+                    SqlParameter[] parm =
+                    {
+                        new SqlParameter("@senderId", senderId),
+                        new SqlParameter("@receiverId", msg.Receiver)
+                    };
+                    string dt = db.ReadDataWithResponse("Usp_S_MessageById", parm);
                     return Ok(dt);
                 }
                 else

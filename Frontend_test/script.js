@@ -21,7 +21,7 @@ form.submit(function (event) {
             sessionStorage.setItem("token", response.data.tokenNo);
             location.href = "./index.html";
             const signalr = new signalr.HubConnectionBuilder()
-                .withUrl('https://localhost:44348/api/messagehub')
+                .withUrl("https://localhost:44348/messagehub?token=" + encodeURIComponent(response.data.tokenNo))
                 .build();
             signalr.start().then(function () {
                 console.log("Connection started");
@@ -40,9 +40,13 @@ $(document).ready(function () {
     if (token) {
 
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://localhost:44348/api/messagehub?token=" + encodeURIComponent(token))
+            .withUrl("https://localhost:44348/messagehub?token=" + encodeURIComponent(token))
             .build();
-
+        connection.start().then(function () {
+            console.log("Connection started");
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
         const navbar = $("#narbarBtn");
         const logoutButton = $(
             `<button class='btn btn-danger'  id='logoutButton'>Logout</button>`
@@ -66,13 +70,15 @@ $(document).ready(function () {
 
         $(document).on("click", "#sendMessageBtn", function () {
             const message = $("#messageInput").val();
-            connection.invoke("message", { receiverId: $(this).data("userid"), message: message });
+            connection.invoke("Message", { Receiver: parseInt($(this).data("userid")), MessageText: message, TokenNo: token }).catch(function (err) {
+                return console.error(err.toString());
+            });
 
         });
-        connection.on("messageSent", (message) => {
+        connection.on("messageSent", (data) => {
             $(".chat-history ul").append(`<li class="clearfix">
             <div class="message my-message float-right">
-              ${message}
+              ${data.message}
             </div>
           </li>`);
             $("#messageInput").val("")

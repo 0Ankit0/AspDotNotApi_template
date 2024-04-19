@@ -4,6 +4,7 @@ using ServiceApp_backend.Classes;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Net.Http.Headers;
 
 namespace ServiceApp_backend.Models
 {
@@ -27,28 +28,29 @@ namespace ServiceApp_backend.Models
 
             await base.OnConnectedAsync();
         }
-        public async Task Message(dynamic data)
+        public async Task Message(Message data)
         {
             try
             {
-                var token = data.receiverId.ToString();
-                var message = data.message.ToString();
+                var receiverId = data.Receiver;
+                var message = data.MessageText;
+                var token = data.TokenNo;
 
-                int receiverId = _jwtAuth.ExtractUserInfo(token);
                 Message msg = new Message
                 {
                     MessageText = message,
                     Sender = _jwtAuth.ExtractUserInfo(_connectionIdToTokenMap[Context.ConnectionId]),
-                    Receiver = receiverId,
-                    TokenNo = token
+                    Receiver = receiverId
                 };
                 var json = JsonSerializer.Serialize(msg);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 using var httpClient = new HttpClient();
-                var response = await httpClient.PostAsync("https://localhost:44348/api/home/insertmessage", content);
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var response = await httpClient.PostAsync("https://localhost:44348/api/Home/message", content);
                 response.EnsureSuccessStatusCode();
-
+                await Clients.Caller.SendAsync("messageSent", new { userId = msg.Sender, message = msg.MessageText });
+                await Clients.Client(_connectionIdToTokenMap.FirstOrDefault(x => x.Value == token).Key).SendAsync("liveMessage", new { userId = msg.Sender, message = msg.MessageText });
             }
             catch (System.Exception)
             {

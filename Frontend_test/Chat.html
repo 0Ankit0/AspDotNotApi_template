@@ -119,7 +119,7 @@
         $(".chat").removeClass("d-none");
         $(".chat-list li").removeClass("active");
         $(this).addClass("active");
-        getMessage($(this).data("userid"));
+        getMessage(parseInt($(this).data("userid")));
 
         $("#sendMessageBtn").attr("data-userId", $(this).data("userid"));
         $(".CurrentChattingUser").text($(this).find(".name").text());
@@ -135,7 +135,6 @@
           success: function (response) {
             var userList = ``;
             var userResponse = JSON.parse(response);
-            console.log(userResponse);
             userResponse.data.forEach((user) => {
               userList += `<li class="clearfix" data-userId="${user.UserId}">
                   <img
@@ -161,24 +160,28 @@
 
       async function getMessage(userId) {
         $.ajax({
-          url: "http://localhost:8000/message/",
+          url: "https://localhost:44348/api/Home/MessageList",
           type: "POST",
-          data: JSON.stringify({ receiver: userId }),
+          data: JSON.stringify({ Receiver: userId }),
           contentType: "application/json; charset=utf-8",
           headers: {
             Authorization: "Bearer " + sessionStorage.getItem("token"),
           },
           success: function (response) {
+            var messageResponse = JSON.parse(response);
             var messageList = ``;
-            response.forEach((message) => {
+            if (messageResponse.data.length == 0) {
+              return alert(messageResponse.message);
+            }
+            messageResponse.data.forEach((message) => {
               messageList += `<li class="clearfix">
                   
                   <div class="message ${
-                    message.status == "receiver"
+                    message.Status == "receiver"
                       ? "other-message"
                       : "my-message float-right"
                   }">
-                    ${message.message}
+                    ${message.Message}
                   </div>
                 </li>`;
             });
