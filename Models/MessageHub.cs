@@ -23,8 +23,8 @@ namespace ServiceApp_backend.Models
         public override async Task OnConnectedAsync()
         {
             var token = Context.GetHttpContext().Request.Query["token"].ToString();
-
-            _connectionIdToTokenMap.TryAdd(Context.ConnectionId, token);
+            int userId = _jwtAuth.ExtractUserInfo(token);
+            _connectionIdToTokenMap.TryAdd(Context.ConnectionId, userId.ToString());
 
             await base.OnConnectedAsync();
         }
@@ -50,7 +50,12 @@ namespace ServiceApp_backend.Models
                 var response = await httpClient.PostAsync("https://localhost:44348/api/Home/message", content);
                 response.EnsureSuccessStatusCode();
                 await Clients.Caller.SendAsync("messageSent", new { userId = msg.Sender, message = msg.MessageText });
-                await Clients.Client(_connectionIdToTokenMap.FirstOrDefault(x => x.Value == token).Key).SendAsync("liveMessage", new { userId = msg.Sender, message = msg.MessageText });
+                string receiver = receiverId.ToString();
+                if (_connectionIdToTokenMap.Any(x => x.Value == receiver))
+                {
+                    var connectionId = _connectionIdToTokenMap.FirstOrDefault(x => x.Value == receiver).Key;
+                    await Clients.Client(connectionId).SendAsync("messageReceived", new { userId = msg.Sender, message = msg.MessageText });
+                }
             }
             catch (System.Exception)
             {
@@ -58,8 +63,7 @@ namespace ServiceApp_backend.Models
                 throw;
             }
 
-            // For example, you can send a message back to the client like this:
-            // await Clients.All.SendAsync("messageReceived", new { userId = userId, username = username });
+
         }
     }
 }

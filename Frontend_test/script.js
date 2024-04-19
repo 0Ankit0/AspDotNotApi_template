@@ -63,7 +63,7 @@ $(document).ready(function () {
         connection.on("liveMessage", (data) => {
             $(".chat-history ul").append(`<li class="clearfix">
             <div class="message other-message">
-              ${data}
+              ${data.message}
             </div>
           </li>`);
         });
@@ -82,6 +82,10 @@ $(document).ready(function () {
             </div>
           </li>`);
             $("#messageInput").val("")
+        });
+        connection.onclose((error) => {
+            console.log(`Connection closed due to error: ${error}`);
+            // You can add code here to handle the disconnection, like trying to reconnect
         });
     }
 });
