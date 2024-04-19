@@ -1,4 +1,7 @@
-﻿using System.Data;
+﻿using System.Collections.Concurrent;
+using System.Data;
+using System.Text;
+using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Server.IIS;
@@ -14,7 +17,12 @@ namespace ServiceApp_backend.Controllers
     public class HomeController : Controller
     {
         DatabaseHelper db = new DatabaseHelper();
+        private readonly ConcurrentDictionary<string, string> _connectionIdToGuidMap;
 
+        public HomeController(ConcurrentDictionary<string, string> connectionIdToGuidMap)
+        {
+            _connectionIdToGuidMap = connectionIdToGuidMap;
+        }
         public IActionResult Index()
         {
             return Ok("Welcome to the home page");
@@ -40,14 +48,39 @@ namespace ServiceApp_backend.Controllers
                 var user = HttpContext.Items["User"] as dynamic;
                 if (user != null)
                 {
+                    StringBuilder Sb = new StringBuilder();
+                    string jsonstring = "";
                     var userId = user.UserId;
                     SqlParameter[] parm =
                     {
                         new SqlParameter("@UserId", userId)
                     };
-                    string dt = db.ReadDataWithResponse("Usp_S_UsersList", parm);
+                    DataTable dt = db.ReadDataTable("Usp_S_UsersList", parm);
+                    dt.Columns.Add("IsOnline", typeof(string));
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        if (_connectionIdToGuidMap.Any(x => x.Value == dt.Rows[i]["GUID"].ToString()))
+                        {
+                            dt.Rows[i]["IsOnline"] = "online";
+                        }
+                        else
+                        {
+                            dt.Rows[i]["IsOnline"] = "offline";
+                        }
+                    }
+                    if (dt.Rows.Count > 0)
+                    {
+                        Sb.Append(db.DataTableToJSON(dt, "data", 200, "Data Listed Successfully"));
+                        jsonstring = Sb.ToString();
+                        return Ok(jsonstring);
+                    }
+                    else
+                    {
+                        Sb.Append(db.DataTableToJSON(dt, "data", 401, "Data Not Found"));
+                        jsonstring = Sb.ToString();
+                        return BadRequest(jsonstring);
+                    }
 
-                    return Ok(dt);
                 }
                 else
                 {

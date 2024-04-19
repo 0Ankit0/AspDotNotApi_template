@@ -89,6 +89,7 @@ builder.Services.AddCors(options =>
                    .AllowCredentials();
         });
 });
+builder.Services.AddSingleton(new ConcurrentDictionary<string, string>());
 
 var app = builder.Build();
 
