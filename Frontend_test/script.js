@@ -5,7 +5,7 @@ form.submit(function (event) {
     event.preventDefault();
 
     var data = {
-        Email: $("#Email").val(),
+        UserEmail: $("#Email").val(),
         Password: $("#Password").val()
     }
     $.ajax({
@@ -14,18 +14,25 @@ form.submit(function (event) {
         data: JSON.stringify(data),
         contentType: "application/json; charset=utf-8",
         success: function (response) {
-            sessionStorage.setItem("token", response.token);
+            if (response.status === 404) {
+                alert(response.message);
+                return;
+            }
+            sessionStorage.setItem("token", response.data.tokenNo);
             location.href = "./index.html";
-            const signalr = new signalR.HubConnectionBuilder()
+            const signalr = new signalr.HubConnectionBuilder()
                 .withUrl('https://localhost:44348/api/messagehub')
                 .build();
+            signalr.start().then(function () {
+                console.log("Connection started");
+            }).catch(function (err) {
+                return console.error(err.toString());
+            });
         },
-        error: function (xhr, error) {
-            if (xhr.status === 401) {
-                alert(xhr.responseJSON.message);
-            } else {
-                alert("Error occurred", error);
-            }
+        error: function (error) {
+
+            alert("Error occurred", error);
+
 
         }
     });
@@ -35,7 +42,7 @@ $(document).ready(function () {
 
     if (token) {
 
-       const connection = new signalR.HubConnectionBuilder()
+        const connection = new signalR.HubConnectionBuilder()
             .withUrl('https://localhost:44348/api/messagehub')
             .build();
 
@@ -48,11 +55,11 @@ $(document).ready(function () {
 
         $("#logoutButton").click(function () {
             sessionStorage.removeItem("token");
-            socket.disconnect();
+            connection.stop();
             window.location.href = "./login.html";
         });
 
-        socket.on("liveMessage", (data) => {
+        connection.on("liveMessage", (data) => {
             $(".chat-history ul").append(`<li class="clearfix">
             <div class="message other-message">
               ${data}

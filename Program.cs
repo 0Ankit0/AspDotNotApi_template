@@ -1,4 +1,4 @@
-
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -18,9 +18,8 @@ DatabaseSettings.ConnectionString = builder.Configuration.GetConnectionString("D
 
 
 // Configure JWT authentication.
-var jwtAuth = new JwtAuth("aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789!@#$%^&*()", "Ankit", "AllUsers");
-builder.Services.AddSingleton(jwtAuth);
-
+builder.Services.AddSingleton<ConcurrentDictionary<string, string>>();
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -29,9 +28,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtAuth.Issuer,
-            ValidAudience = jwtAuth.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtAuth.SecretKey))
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(builder.Configuration["JwtSettings:SecretKey"]))
         };
     });
 
@@ -57,10 +56,9 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(
         builder =>
         {
-            builder.WithOrigins()
-                .AllowAnyHeader()
-                .WithMethods()
-                .AllowCredentials();
+            builder.AllowAnyOrigin()
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
         });
 });
 

@@ -1,28 +1,26 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.Extensions.Options;
 using System.Text;
+using ServiceApp_backend.Models;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ServiceApp_backend.Classes
 {
     public class JwtAuth
     {
-        public string SecretKey { get; set; }
-        public string Issuer { get; set; }
-        public string Audience { get; set; }
+        private readonly JwtSettings _jwtSettings;
 
-        public JwtAuth(string secretKey, string issuer, string audience)
+        public JwtAuth(IOptions<JwtSettings> jwtSettings)
         {
-            SecretKey = secretKey;
-            Issuer = issuer; //who issued it (the server)
-            Audience = audience; //who is it intended for (the client)
+            _jwtSettings = jwtSettings.Value;
         }
 
         public string GenerateToken(string username, int userId)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(SecretKey);
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -32,8 +30,8 @@ namespace ServiceApp_backend.Classes
                     new Claim(ClaimTypes.NameIdentifier, userId.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddDays(7),
-                Issuer = Issuer,
-                Audience = Audience,
+                Issuer = _jwtSettings.Issuer,
+                Audience = _jwtSettings.Audience,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
@@ -44,7 +42,7 @@ namespace ServiceApp_backend.Classes
         public bool Authorize(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(SecretKey);
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
 
             try
             {
@@ -53,8 +51,8 @@ namespace ServiceApp_backend.Classes
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = Issuer,
-                    ValidAudience = Audience,
+                    ValidIssuer = _jwtSettings.Issuer,
+                    ValidAudience = _jwtSettings.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 }, out _);
 
@@ -66,26 +64,25 @@ namespace ServiceApp_backend.Classes
             }
         }
 
-        public (string username, int userId) ExtractUserInfo(string token)
+        public int ExtractUserInfo(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(SecretKey);
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
 
             var validationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = Issuer,
-                ValidAudience = Audience,
+                ValidIssuer = _jwtSettings.Issuer,
+                ValidAudience = _jwtSettings.Audience,
                 IssuerSigningKey = new SymmetricSecurityKey(key)
             };
 
             var claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out _);
-            var username = claimsPrincipal.FindFirst(ClaimTypes.Name)?.Value;
             var userId = int.Parse(claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-            return (username, userId);
+            return userId;
         }
     }
 }
