@@ -23,7 +23,7 @@ namespace ServiceApp_backend.Classes
             return DatabaseSettings.ConnectionString;
         }
 
-        public JObject ReadDataWithResponse(string sql, SqlParameter[] parm)
+        public string ReadDataWithResponse(string sql, SqlParameter[] parm)
         {
             StringBuilder Sb = new StringBuilder();
             string ConString = GetConnectionString();
@@ -46,23 +46,15 @@ namespace ServiceApp_backend.Classes
                 ad.Fill(dt);
                 if (dt.Rows.Count > 0)
                 {
-                    Sb.Append(DataTableToJSON(dt, "Data"));
-                    Sb.Append(",\"status\":200,\"message\":\"Data list is sucessfully displayed\"}");
+                    Sb.Append(DataTableToJSON(dt, "data", 200, "Data Listed Successfully"));
                     jsonstring = Sb.ToString();
-                    JObject myObj = (JObject)JsonConvert.DeserializeObject(jsonstring);
-                    return myObj;
+                    return jsonstring;
                 }
                 else
                 {
-                    ResponseModel rm = new ResponseModel
-                    {
-                        message = "Data not found",
-                        status = 404,
-                        data = new { tokenNo = "" }
-                    };
-                    jsonstring = JsonConvert.SerializeObject(rm);
-                    JObject myObj = (JObject)JsonConvert.DeserializeObject(jsonstring);
-                    return myObj;
+                    Sb.Append(DataTableToJSON(dt, "data", 401, "Data Not Found"));
+                    jsonstring = Sb.ToString();
+                    return jsonstring;
                 }
             }
             catch (Exception ex)
@@ -161,8 +153,12 @@ namespace ServiceApp_backend.Classes
             }
         }
 
-        public string DataTableToJSON(DataTable Dt, string tagname)
+        public string DataTableToJSON(DataTable Dt, string tagname, int status, string message)
         {
+            if (Dt.Rows.Count == 0)
+            {
+                return "{\"" + tagname + "\": [], \"status\": " + status + ", \"message\": \"" + message + "\"}]";
+            }
             string[] StrDc = new string[Dt.Columns.Count];
             string HeadStr = string.Empty;
 
@@ -199,7 +195,7 @@ namespace ServiceApp_backend.Classes
                 Sb.Append(TempStr + "},");
             }
             Sb = new StringBuilder(Sb.ToString().Substring(0, Sb.ToString().Length - 1));
-            Sb.Append("]");
+            Sb.Append("],\"status\": " + status + ", \"message\": \"" + message + "\"}");
             return Sb.ToString();
         }
 

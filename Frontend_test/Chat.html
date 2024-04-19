@@ -87,9 +87,7 @@
                 </div>
               </div>
               <div class="chat-history">
-                <ul class="m-b-0">
-                 
-                </ul>
+                <ul class="m-b-0"></ul>
               </div>
               <div class="chat-message clearfix">
                 <div class="input-group mb-0">
@@ -128,7 +126,7 @@
       });
       async function getData() {
         $.ajax({
-          url: "http://localhost:8000/message/userList",
+          url: "https://localhost:44348/api/Home/UserList",
           type: "GET",
           contentType: "application/json; charset=utf-8",
           headers: {
@@ -136,16 +134,18 @@
           },
           success: function (response) {
             var userList = ``;
-            response.forEach((user) => {
-              userList += `<li class="clearfix" data-userId="${user._id}">
+            var userResponse = JSON.parse(response);
+            console.log(userResponse);
+            userResponse.data.forEach((user) => {
+              userList += `<li class="clearfix" data-userId="${user.UserId}">
                   <img
                     src="https://bootdey.com/img/Content/avatar/avatar2.png"
                     alt="avatar"
                   />
                   <div class="about">
-                    <div class="name">${user.Name}</div>
+                    <div class="name">${user.UserName}</div>
                     <div class="status">
-                      <i class="fa fa-circle ${user.status}"></i> ${user.status}
+                      <i class="fa fa-circle offline"></i> offline
                     </div>
                   </div>
                 </li>`;

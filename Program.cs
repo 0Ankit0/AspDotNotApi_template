@@ -7,6 +7,7 @@ using System.Text;
 using AspNetCoreRateLimit;
 using Newtonsoft.Json;
 using ServiceApp_backend.Models;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,7 @@ DatabaseSettings.ConnectionString = builder.Configuration.GetConnectionString("D
 // Configure JWT authentication.
 builder.Services.AddSingleton<ConcurrentDictionary<string, string>>();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
-builder.Services.AddScoped<JwtAuth>(); // Add this line
+builder.Services.AddScoped<JwtAuth>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -32,6 +33,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
             ValidAudience = builder.Configuration["JwtSettings:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(builder.Configuration["JwtSettings:SecretKey"]))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var claimsIdentity = context.Principal.Identity as ClaimsIdentity;
+                var userIdClaim = claimsIdentity?.FindFirst(ClaimTypes.NameIdentifier);
+                var usernameClaim = claimsIdentity?.FindFirst(ClaimTypes.Name);
+
+                if (userIdClaim != null && usernameClaim != null)
+                {
+                    var user = new
+                    {
+                        UserId = userIdClaim.Value,
+                        Username = usernameClaim.Value
+                    };
+
+                    // Add the user object to the HttpContext items, which can be accessed in the controllers
+                    context.HttpContext.Items["User"] = user;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
