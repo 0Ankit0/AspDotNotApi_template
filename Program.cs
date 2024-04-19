@@ -52,6 +52,18 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(
+        builder =>
+        {
+            builder.WithOrigins()
+                .AllowAnyHeader()
+                .WithMethods()
+                .AllowCredentials();
+        });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -60,10 +72,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapHub<MessageHub>("/messagehub");
-});
+
 
 app.UseHttpsRedirection();
 
@@ -89,7 +98,9 @@ app.UseStatusCodePages(async context =>
 });
 
 app.UseAuthorization();
+app.UseCors();
 
 app.MapControllers();
+app.MapHub<MessageHub>("/messagehub");
 
 app.Run();
