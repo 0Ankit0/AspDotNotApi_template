@@ -8,6 +8,7 @@ using AspNetCoreRateLimit;
 using Newtonsoft.Json;
 using ServiceApp_backend.Models;
 using System.Security.Claims;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,21 +19,33 @@ builder.Services.AddControllers();
 DatabaseSettings.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 
-// Configure JWT authentication.
-builder.Services.AddSingleton<ConcurrentDictionary<string, string>>();
+// Configure JWT settings
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
-builder.Services.AddScoped<JwtAuth>();
+
+// Inject JwtSettings using IOptions
+builder.Services.AddSingleton<IJwtAuth>(serviceProvider =>
+{
+    var jwtSettings = serviceProvider.GetRequiredService<IOptions<JwtSettings>>();
+    return new JwtAuth(jwtSettings);
+});
+
+// Configure JWT authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        var serviceProvider = builder.Services.BuildServiceProvider();
+        var jwtSettings = serviceProvider.GetRequiredService<IOptions<JwtSettings>>().Value;
+        var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
+            ValidateLifetime = true, // Validates token expiry
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(builder.Configuration["JwtSettings:SecretKey"]))
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(key)
         };
 
         options.Events = new JwtBearerEvents
@@ -45,21 +58,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 if (userIdClaim != null && usernameClaim != null)
                 {
-                    var user = new
+                    var user = new AuthenticatedUser
                     {
                         UserId = userIdClaim.Value,
                         Username = usernameClaim.Value
                     };
 
-                    // Add the user object to the HttpContext items, which can be accessed in the controllers
+                    // Add the user object to the HttpContext items
                     context.HttpContext.Items["User"] = user;
                 }
 
                 return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                // Log the exception
+                context.NoResult();
+                context.Response.StatusCode = 500;
+                context.Response.ContentType = "text/plain";
+                return context.Response.WriteAsync(context.Exception.ToString());
             }
         };
     });
-
 //Configure IP rate limiting services
 builder.Services.AddMemoryCache();
 builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));

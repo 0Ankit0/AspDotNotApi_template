@@ -17,9 +17,9 @@ namespace ServiceApp_backend.Controllers
     public class LoginController : ControllerBase
     {
         DatabaseHelper db = new DatabaseHelper();
-        private readonly JwtAuth _jwtAuth;
+        private readonly IJwtAuth _jwtAuth;
 
-        public LoginController(JwtAuth jwtAuth)
+        public LoginController(IJwtAuth jwtAuth)
         {
             _jwtAuth = jwtAuth;
         }
@@ -42,10 +42,12 @@ namespace ServiceApp_backend.Controllers
         [HttpPost]
         public IActionResult Post([FromBody] UsersModal br)
         {
-            var jsonstring = "";
-            StringBuilder Sb = new StringBuilder();
-            SqlParameter[] parm =
+            try
             {
+                var jsonstring = "";
+                StringBuilder Sb = new StringBuilder();
+                SqlParameter[] parm =
+                {
                 new SqlParameter("@UserName", br.UserName),
                 new SqlParameter("@UserEmail", br.UserEmail),
                 new SqlParameter("@Password", br.Password),
@@ -54,24 +56,34 @@ namespace ServiceApp_backend.Controllers
                 new SqlParameter("@Role", br.Role),
                 new SqlParameter("@GUID", br.GUID)
             };
-            DataTable dt = db.ReadDataTable("Usp_IU_Users", parm);
-            var UserId = dt.Rows[0]["UserId"].ToString();
-            if (dt.Rows.Count > 0)
-            {
-                string TokenNo = _jwtAuth.GenerateToken(br.UserName, Convert.ToInt32(UserId));
-                jsonstring = "{\"status\":200,\"message\":\"Data is sucessfully inserted\",\"data\":{\"tokenNo\":\"" + TokenNo + "\"}}";
-                JObject myObj = (JObject)JsonConvert.DeserializeObject(jsonstring);
-                return Ok(myObj);
-            }
-            else
+                DataTable dt = db.ReadDataTable("Usp_IU_Users", parm);
+                var UserId = dt.Rows[0]["UserId"].ToString();
+                if (dt.Rows.Count > 0)
+                {
+                    string TokenNo = _jwtAuth.GenerateToken(br.UserName, Convert.ToInt32(UserId));
+                    jsonstring = "{\"status\":200,\"message\":\"Data is sucessfully inserted\",\"data\":{\"tokenNo\":\"" + TokenNo + "\"}}";
+                    JObject myObj = (JObject)JsonConvert.DeserializeObject(jsonstring);
+                    return Ok(myObj);
+                }
+                else
+                {
+                    ResponseModel rm = new ResponseModel
+                    {
+                        message = "Couldn't save data please try again",
+                        status = 404,
+                        data = new { tokenNo = "" }
+                    };
+
+                    return Ok(rm);
+                }
+            }catch(Exception ex)
             {
                 ResponseModel rm = new ResponseModel
                 {
-                    message = "Couldn't save data please try again",
-                    status = 404,
+                    message = ex.Message,
+                    status = 501,
                     data = new { tokenNo = "" }
                 };
-
                 return Ok(rm);
             }
         }
