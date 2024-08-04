@@ -11,23 +11,27 @@ using ServiceApp_backend.Models;
 
 namespace ServiceApp_backend.Classes
 {
-    public static class DatabaseSettings
+    public interface IDataHandler
     {
-        public static string ConnectionString { get; set; }
+        public string ReadDataWithResponse(string sql, SqlParameter[] param);
+        public DataTable ReadDataTable(string sql, SqlParameter[] parm);
+        public ResponseModel ReadCount(string sql, SqlParameter[] param);
+        public string DataTableToJSON(DataTable Dt, string tagname, int status, string message);
     }
-    public class DatabaseHelper
-    {
 
-        public string GetConnectionString()
+
+    public class DatabaseHelper : IDataHandler
+    {
+        private readonly string _connectionString;
+        public DatabaseHelper(String ConnectionString)
         {
-            return DatabaseSettings.ConnectionString;
+            _connectionString = ConnectionString;
         }
 
         public string ReadDataWithResponse(string sql, SqlParameter[] parm)
         {
             StringBuilder Sb = new StringBuilder();
-            string ConString = GetConnectionString();
-            SqlConnection conn = new SqlConnection(ConString);
+            SqlConnection conn = new SqlConnection(_connectionString);
             try
             {
                 var jsonstring = "";
@@ -46,20 +50,25 @@ namespace ServiceApp_backend.Classes
                 ad.Fill(dt);
                 if (dt.Rows.Count > 0)
                 {
-                    Sb.Append(DataTableToJSON(dt, "data", 200, "Data Listed Successfully"));
+                    Sb.Append(DataTableToJSON(dt, "data", StatusCodes.Status200OK, "Data Listed Successfully"));
                     jsonstring = Sb.ToString();
                     return jsonstring;
                 }
                 else
                 {
-                    Sb.Append(DataTableToJSON(dt, "data", 401, "Data Not Found"));
+                    Sb.Append(DataTableToJSON(dt, "data", StatusCodes.Status204NoContent, "Data Not Found"));
                     jsonstring = Sb.ToString();
                     return jsonstring;
                 }
             }
             catch (Exception ex)
             {
-                throw ex;
+                ResponseModel rm = new ResponseModel
+                {
+                    message = ex.Message,
+                    status = StatusCodes.Status417ExpectationFailed
+                };
+                return JsonConvert.SerializeObject(rm);
             }
             finally
             {
@@ -70,8 +79,7 @@ namespace ServiceApp_backend.Classes
         public DataTable ReadDataTable(string sql, SqlParameter[] parm)
         {
             StringBuilder Sb = new StringBuilder();
-            string ConString = GetConnectionString();
-            SqlConnection conn = new SqlConnection(ConString);
+            SqlConnection conn = new SqlConnection(_connectionString);
             try
             {
                 var jsonstring = "";
@@ -101,10 +109,9 @@ namespace ServiceApp_backend.Classes
         }
 
 
-        public ResponseModel ReaCount(string sql, SqlParameter[] param)
+        public ResponseModel ReadCount(string sql, SqlParameter[] param)
         {
-            string ConString = GetConnectionString();
-            SqlConnection con = new SqlConnection(ConString);
+            SqlConnection con = new SqlConnection(_connectionString);
             try
             {
                 var jsonstring = "";
@@ -127,7 +134,7 @@ namespace ServiceApp_backend.Classes
                         {
                             message = "The operation was successful",
                             status = 404,
-                            data = new { tokenNo = "" }
+                            data = new { }
                         };
                         return rm;
                     }
@@ -137,7 +144,7 @@ namespace ServiceApp_backend.Classes
                         {
                             message = "Some Error Occured! Please Try Again",
                             status = 404,
-                            data = new { tokenNo = "" }
+                            data = new { }
                         };
                         return rm;
                     }
@@ -145,7 +152,13 @@ namespace ServiceApp_backend.Classes
             }
             catch (Exception ex)
             {
-                throw ex;
+                ResponseModel rm = new ResponseModel
+                {
+                    message = ex.Message,
+                    status = StatusCodes.Status417ExpectationFailed,
+                    data = new { }
+                };
+                return rm;
             }
             finally
             {
@@ -166,7 +179,7 @@ namespace ServiceApp_backend.Classes
                 Sb.Append("{\"" + tagname + "\" :" + data + ",\"status\": " + status + ", \"message\": \"" + message + "\"}");
                 return Sb.ToString();
             }
-            
+
         }
 
 

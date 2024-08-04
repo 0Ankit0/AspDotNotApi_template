@@ -9,15 +9,25 @@ using Newtonsoft.Json;
 using ServiceApp_backend.Models;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 
-// Retrieve the connection string from the configuration.
-DatabaseSettings.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+// Read the connection string
+var BaseAddress = builder.Configuration.GetConnectionString("DefaultConnection");
+
+
+//Add datahandler as transient
+builder.Services.AddTransient<IDataHandler>(ServiceProvider =>
+{
+    // Read the connection string
+    var connectionString = builder.Configuration.GetConnectionString("BaseAddress");
+    return new DatabaseHelper(connectionString);
+});
 
 // Configure JWT settings
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
