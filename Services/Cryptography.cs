@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Security.Cryptography;
 
-namespace ServiceApp_backend.Services
+namespace Api_Template.Services
 {
     interface ICryptography
     {

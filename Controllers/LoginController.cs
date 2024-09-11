@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ServiceApp_backend.Models;
-using ServiceApp_backend.Classes;
+using Api_Template.Models;
+using Api_Template.Classes;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Data;
@@ -10,7 +10,7 @@ using System.Text;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace ServiceApp_backend.Controllers
+namespace Api_Template.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

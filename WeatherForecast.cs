@@ -1,4 +1,4 @@
-namespace ServiceApp_backend
+namespace Api_Template
 {
     public class WeatherForecast
     {

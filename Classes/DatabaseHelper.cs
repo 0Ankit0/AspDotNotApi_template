@@ -7,9 +7,9 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Microsoft.AspNetCore.Mvc;
-using ServiceApp_backend.Models;
+using Api_Template.Models;
 
-namespace ServiceApp_backend.Classes
+namespace Api_Template.Classes
 {
     public interface IDataHandler
     {

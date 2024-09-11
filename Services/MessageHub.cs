@@ -1,11 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
-using ServiceApp_backend.Models;
+using Api_Template.Models;
 using System.Text;
 using System.Text.Json;
 using System.Net.Http.Headers;
 
-namespace ServiceApp_backend.Classes
+namespace Api_Template.Classes
 {
 
     public class MessageHub : Hub

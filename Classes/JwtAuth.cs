@@ -3,11 +3,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using System.Text;
-using ServiceApp_backend.Models;
+using Api_Template.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.Numerics;
 
-namespace ServiceApp_backend.Classes
+namespace Api_Template.Classes
 {
      public interface IJwtAuth
     {

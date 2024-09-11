@@ -7,10 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Server.IIS;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json.Linq;
-using ServiceApp_backend.Classes;
-using ServiceApp_backend.Models;
+using Api_Template.Classes;
+using Api_Template.Models;
 
-namespace ServiceApp_backend.Controllers
+namespace Api_Template.Controllers
 {
     [Authorize]
     [Route("api/[controller]")]

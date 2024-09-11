@@ -1,4 +1,4 @@
-﻿namespace ServiceApp_backend.Models
+﻿namespace Api_Template.Models
 {
     public class ResponseModel
     {
