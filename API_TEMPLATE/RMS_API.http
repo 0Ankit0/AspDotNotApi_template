@@ -1,0 +1,29 @@
+@RMS_API_HostAddress = https://localhost:44309
+
+
+### GET Request Example
+GET {{RMS_API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+### POST Request for User Login
+POST {{RMS_API_HostAddress}}/api/User/Login
+Content-Type: application/json
+Accept: application/json
+{
+    "usernameOrEmail": "ankit@gmail.com",
+    "password": "Ankit@123",
+    "guid":""
+}
+
+### POST Request for User Register
+POST {{RMS_API_HostAddress}}/api/User/Register
+Content-Type: application/json
+Accept: application/json
+{
+  "username": "Ankit",
+  "email": "ankit@gmail.com",
+  "password": "Ankit@123",
+  "confirmPassword": "Ankit@123",
+  "phoneNumber": "0000000000",
+  "role": 1
+}
