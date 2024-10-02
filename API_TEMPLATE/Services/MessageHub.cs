@@ -39,11 +39,10 @@ namespace API_TEMPLATE.Services
             }
             catch (System.Exception)
             {
-
                 throw new Exception("Error in mapping connection id to guid");
             }
-
         }
+
         public async Task Message(MessageModel data)
         {
             try
@@ -52,17 +51,31 @@ namespace API_TEMPLATE.Services
                 var senderId = data.Sender;
                 var message = data.MessageText;
                 var token = data.TokenNo;
-                if (!IsBase64String(message))
+
+                if (!_connectionIdToGuidMap.TryGetValue(Context.ConnectionId, out var senderMap))
                 {
-                    await Clients.Caller.SendAsync("errorMessage", new { error = "The message is not encrypted." });
+                    await Clients.Caller.SendAsync("errorMessage", new { error = "Sender not mapped." });
                     return;
                 }
+
+                if (!_connectionIdToGuidMap.Any(x => x.Value.UserId == receiverId))
+                {
+                    await Clients.Caller.SendAsync("errorMessage", new { error = "Receiver not mapped." });
+                    return;
+                }
+
+                var receiverMap = _connectionIdToGuidMap.FirstOrDefault(x => x.Value.UserId == receiverId).Value;
+
+                // Encrypt the message using the receiver's public key
+                var encryptedMessage = _cryptography.Encrypt(message, receiverMap.Publickey);
+
                 MessageModel msg = new MessageModel
                 {
-                    MessageText = message,
+                    MessageText = encryptedMessage,
                     Sender = senderId,
                     Receiver = receiverId
                 };
+
                 var json = JsonSerializer.Serialize(msg);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -70,17 +83,17 @@ namespace API_TEMPLATE.Services
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 var response = await httpClient.PostAsync("https://localhost:44348/api/Home/message", content);
                 response.EnsureSuccessStatusCode();
+
                 await Clients.Caller.SendAsync("messageSent", new { userId = msg.Sender, message = msg.MessageText });
+
                 if (_connectionIdToGuidMap.Any(x => x.Value.UserId == receiverId))
                 {
                     var connectionId = _connectionIdToGuidMap.FirstOrDefault(x => x.Value.UserId == receiverId).Key;
                     await Clients.Client(connectionId).SendAsync("liveMessage", new { userId = msg.Sender, message = msg.MessageText });
                 }
-
             }
             catch (System.Exception)
             {
-
                 throw;
             }
         }
@@ -90,6 +103,7 @@ namespace API_TEMPLATE.Services
             _connectionIdToGuidMap.TryRemove(Context.ConnectionId, out _);
             return base.OnDisconnectedAsync(exception);
         }
+
         // Helper method to check if a string is a valid Base64 string
         private bool IsBase64String(string base64)
         {
@@ -106,9 +120,5 @@ namespace API_TEMPLATE.Services
                 return false;
             }
         }
-
     }
-
-
 }
-
