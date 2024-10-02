@@ -1,6 +1,7 @@
 using API_TEMPLATE.Configuration;
 using API_TEMPLATE.CustomClass;
 using API_TEMPLATE.Data;
+using API_TEMPLATE.Middleware;
 using API_TEMPLATE.Models;
 using API_TEMPLATE.Services;
 using Asp.Versioning;
@@ -100,6 +101,9 @@ app.UseHttpsRedirection();
 
 //To use authentication
 app.UseAuthentication();
+
+//To add custom apikey middleware for authentication
+//app.UseApiKeyAuth();
 
 app.UseAuthorization();
 

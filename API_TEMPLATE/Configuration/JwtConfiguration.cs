@@ -75,11 +75,20 @@ namespace API_TEMPLATE.Configuration
                         },
                         OnAuthenticationFailed = context =>
                         {
-                            // Log the exception
-                            context.NoResult();
-                            context.Response.StatusCode = 500;
-                            context.Response.ContentType = "text/plain";
-                            return context.Response.WriteAsync(context.Exception.ToString());
+                            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                            {
+                                context.Response.StatusCode = 401;
+                                context.Response.ContentType = "application/json";
+                                var result = Newtonsoft.Json.JsonConvert.SerializeObject(new { message = "Token has expired" });
+                                return context.Response.WriteAsync(result);
+                            }
+                            else
+                            {
+                                context.NoResult();
+                                context.Response.StatusCode = 500;
+                                context.Response.ContentType = "text/plain";
+                                return context.Response.WriteAsync(context.Exception.ToString());
+                            }
                         }
                     };
                 });
